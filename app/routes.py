@@ -83,7 +83,7 @@ def recipes():
             'INNER JOIN recipes ON recipe_rating.recipe_id = recipes.id '
             'GROUP BY recipe_id ')
             
-    result = db.engine.execute(sql)
+    result = db.session.execute(sql)
     
     return jsonify({'result': [dict(row) for row in result]})
 
@@ -94,7 +94,8 @@ def my_recipes():
     current_user = get_jwt_identity()
     recipes = Recipes.query.filter_by(user_id=get_jwt_identity())
     
-    return json.dumps(recipe_schema.dump(recipes))
+    #return json.dumps(recipe_schema.dump(recipes))
+    return []
 
 @app.route("/rate-recipe", methods=["POST"])
 @jwt_required()  
@@ -142,7 +143,7 @@ def most_used():
             'GROUP BY ingredient_id '
             'ORDER BY total DESC ' 
             'LIMIT 5')
-    result = db.engine.execute(sql)
+    result = db.session.execute(sql)
     
     return jsonify({'result': [dict(row) for row in result]})
 
