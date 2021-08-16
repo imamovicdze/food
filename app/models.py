@@ -10,8 +10,8 @@ class Users(db.Model):
     email = db.Column(db.String(120), nullable=False, unique=True)
     password = db.Column(db.String(120), nullable=False)
     
-    children = db.relationship("Recipes", backref='users', cascade="all, delete", passive_deletes=True)
-    children = db.relationship("Recipe_rating", backref='users', cascade="all, delete", passive_deletes=True)
+    recipes = db.relationship("Recipes", backref='users', cascade="all, delete", passive_deletes=True)
+    recipe_rating = db.relationship("Recipe_rating", backref='users', cascade="all, delete", passive_deletes=True)
     
     def __init__(self, first_name, last_name, email, password):
         self.first_name = first_name
@@ -37,8 +37,8 @@ class Recipes(db.Model):
     name = db.Column(db.String(200), nullable=False)
     text = db.Column(db.Text(200), nullable=False)
     
-    children = db.relationship("Recipe_rating", backref='recipes', cascade="all, delete", passive_deletes=True)
-    children = db.relationship("Recipe_ingredient", backref='recipes', cascade="all, delete", passive_deletes=True)
+    recipe_rating = db.relationship("Recipe_rating", backref='recipes', cascade="all, delete", passive_deletes=True)
+    recipe_ingredient = db.relationship("Recipe_ingredient", backref='recipes', cascade="all, delete", passive_deletes=True)
     
     def __init__(self, name, text, user_id):
         self.name = name
@@ -52,7 +52,7 @@ class Ingredient(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
     
-    children = db.relationship("Recipe_ingredient", backref='ingredient', cascade="all, delete", passive_deletes=True)
+    recipe_ingredient = db.relationship("Recipe_ingredient", backref='ingredient', cascade="all, delete", passive_deletes=True)
     
     def __init__(self, name):
         self.name = name

@@ -3,7 +3,6 @@ from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identi
 from sqlalchemy import text
 from app import app, db
 from app.models import Users, Recipes, Recipe_rating, Ingredient
-from app.schemas import recipe_schema
 import requests
 import datetime
 import json
@@ -79,9 +78,14 @@ def create_recipe():
 @app.route("/recipes", methods=["GET"])
 @jwt_required()  
 def recipes():
-    recipes = Recipes.query.all()
+    # select recipes with average score
+    sql = text('SELECT recipes.name, AVG(recipe_rating.score) as average_score FROM recipe_rating ' 
+            'INNER JOIN recipes ON recipe_rating.recipe_id = recipes.id '
+            'GROUP BY recipe_id ')
+            
+    result = db.engine.execute(sql)
     
-    return json.dumps(recipe_schema.dump(recipes))
+    return jsonify({'result': [dict(row) for row in result]})
 
 
 @app.route("/my-recipes", methods=["GET"])
@@ -131,12 +135,12 @@ def create_ingredient():
 @app.route("/ingredient/most-used", methods=["GET"])
 @jwt_required()  
 def most_used():
-    body = request.get_json()
     
+    # select top 5 used ingredients
     sql = text('SELECT ingredient.name, COUNT(ingredient_id) as total from recipe_ingredient ' 
             'INNER JOIN ingredient ON recipe_ingredient.ingredient_id = ingredient.id '
-            'GROUP BY ingredient_id ' +
-            'ORDER by total DESC ' 
+            'GROUP BY ingredient_id '
+            'ORDER BY total DESC ' 
             'LIMIT 5')
     result = db.engine.execute(sql)
     
