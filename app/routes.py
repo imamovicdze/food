@@ -6,6 +6,9 @@ from app.models import Users, Recipes, Recipe_rating, Ingredient
 import requests
 import datetime
 import json
+import clearbit
+
+clearbit.key = 'sk_6e5fc2e2eaca14297d931ee1b957fbd7'
 
 @app.route("/")
 def hello_world():
@@ -33,7 +36,14 @@ def signup():
         if data['data']['status'] == 'invalid':
             return jsonify({"message":'Email address is invalid!'})
         else:
+            additional_data = clearbit.Enrichment.find(email=email, stream=True)
+            
             user =  Users(first_name, last_name, email, password)
+            
+            if additional_data != None:
+                user.avatar = additional_data['person']['avatar']
+                user.location = additional_data['person']['location']
+            
             user.hash_password()
             db.session.add(user)
             db.session.commit()

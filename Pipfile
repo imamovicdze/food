@@ -16,6 +16,7 @@ flask-bcrypt = "*"
 requests = "*"
 flask-jwt-extended = "*"
 flask-marshmallow = "*"
+clearbit = "*"
 
 [requires]
 python_version = "3.7"

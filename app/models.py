@@ -9,6 +9,8 @@ class Users(db.Model):
     last_name = db.Column(db.String(200), nullable=False)
     email = db.Column(db.String(120), nullable=False, unique=True)
     password = db.Column(db.String(120), nullable=False)
+    avatar = db.Column(db.String(200))
+    location = db.Column(db.String(200))
     
     recipes = db.relationship("Recipes", backref='users', cascade="all, delete", passive_deletes=True)
     recipe_rating = db.relationship("Recipe_rating", backref='users', cascade="all, delete", passive_deletes=True)
@@ -33,7 +35,7 @@ class Users(db.Model):
 class Recipes(db.Model):
     __tablename__ = 'recipes'
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     name = db.Column(db.String(200), nullable=False)
     text = db.Column(db.Text(200), nullable=False)
     
@@ -62,9 +64,9 @@ class Ingredient(db.Model):
 class Recipe_rating(db.Model):
     __tablename__ = 'recipe_rating'
     id = db.Column(db.Integer, primary_key=True)
-    recipe_id = db.Column(db.Integer, db.ForeignKey('recipes.id', ondelete='CASCADE'))
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'))
-    score = db.Column(db.Enum('1', '2', '3', '4', '5'))
+    recipe_id = db.Column(db.Integer, db.ForeignKey('recipes.id', ondelete='CASCADE'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    score = db.Column(db.Enum('1', '2', '3', '4', '5'), nullable=False)
     
     def __init__(self, recipe_id, user_id, score):
         self.recipe_id = recipe_id
@@ -76,8 +78,8 @@ class Recipe_rating(db.Model):
 class Recipe_ingredient(db.Model):
     __tablename__ = 'recipe_ingredient'
     id = db.Column(db.Integer, primary_key=True)
-    recipe_id = db.Column(db.Integer, db.ForeignKey('recipes.id', ondelete='CASCADE'))
-    ingredient_id = db.Column(db.Integer, db.ForeignKey('ingredient.id', ondelete='CASCADE'))
+    recipe_id = db.Column(db.Integer, db.ForeignKey('recipes.id', ondelete='CASCADE'), nullable=False)
+    ingredient_id = db.Column(db.Integer, db.ForeignKey('ingredient.id', ondelete='CASCADE'), nullable=False)
     
     def __init__(self, recipe_id, ingredient_id):
         self.recipe_id = recipe_id
