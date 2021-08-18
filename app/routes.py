@@ -3,9 +3,10 @@ from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identi
 from sqlalchemy import text
 from app import app, db
 from app.models import Users, Recipes, Recipe_rating, Ingredient
+from app.schemas import SignUpSchema, LoginSchema, IngredientSchema,RecipeSchema, RecipeRatingSchema
+from marshmallow import ValidationError
 import requests
 import datetime
-import json
 import clearbit
 
 clearbit.key = 'sk_6e5fc2e2eaca14297d931ee1b957fbd7'
@@ -18,6 +19,11 @@ def hello_world():
 @app.route("/signup", methods=["POST"])
 def signup():
     body = request.get_json()
+    
+    try:
+        result = SignUpSchema().load(body)
+    except ValidationError as err:
+        return jsonify(err.messages)
     
     first_name = body['first_name']
     last_name = body['last_name']
@@ -55,6 +61,12 @@ def signup():
 @app.route("/login", methods=["POST"])
 def login():
     body = request.get_json()
+    
+    try:
+        result = LoginSchema().load(body)
+    except ValidationError as err:
+        return jsonify(err.messages)
+    
     user = Users.query.filter_by(email=body['email']).first_or_404()
     authorized = user.check_password(body['password'])
     
@@ -70,6 +82,11 @@ def login():
 @jwt_required()  
 def create_recipe():
     body = request.get_json()
+    
+    try:
+        result = RecipeSchema().load(body)
+    except ValidationError as err:
+        return jsonify(err.messages)
     
     name = body['name']
     text = body['text']
@@ -88,10 +105,10 @@ def create_recipe():
 @app.route("/recipes", methods=["GET"])
 @jwt_required()  
 def recipes():
-    # select recipes with average score
-    sql = text('SELECT recipes.name, AVG(recipe_rating.score) as average_score FROM recipe_rating ' 
-            'INNER JOIN recipes ON recipe_rating.recipe_id = recipes.id '
-            'GROUP BY recipe_id ')
+    # select all recipes with their average score
+    sql = text('SELECT recipes.name, AVG(recipe_rating.score) as average_score FROM recipes ' 
+            'LEFT JOIN recipe_rating ON recipes.id = recipe_rating.recipe_id '
+            'GROUP BY recipes.id ')
             
     result = db.session.execute(sql)
     
@@ -102,15 +119,22 @@ def recipes():
 @jwt_required()  
 def my_recipes():
     current_user = get_jwt_identity()
-    recipes = Recipes.query.filter_by(user_id=get_jwt_identity())
     
-    #return json.dumps(recipe_schema.dump(recipes))
-    return []
+    recipes = Recipes.query.filter_by(user_id=current_user).all()
+    recipe_schema = RecipeSchema(many=True)
+    
+    return jsonify(recipe_schema.dump(recipes))
+
 
 @app.route("/rate-recipe", methods=["POST"])
 @jwt_required()  
 def rate_recipe():
     body = request.get_json()
+    
+    try:
+        result = RecipeRatingSchema().load(body)
+    except ValidationError as err:
+        return jsonify(err.messages)
     
     recipe_id = body['recipe_id']
     score = body['score']
@@ -134,9 +158,15 @@ def rate_recipe():
 def create_ingredient():
     body = request.get_json()
     
-    name = body['name']
+    try:
+        result = IngredientSchema().load(body)
+    except ValidationError as err:
+        return jsonify(err.messages)
     
-    ingredient =  Ingredient(name)
+    name = body['name']
+    current_user = get_jwt_identity()
+    
+    ingredient =  Ingredient(name, current_user)
     db.session.add(ingredient)
     db.session.commit()
     id = ingredient.id
@@ -147,7 +177,7 @@ def create_ingredient():
 @jwt_required()  
 def most_used():
     
-    # select top 5 used ingredients
+    # get top 5 used ingredients
     sql = text('SELECT ingredient.name, COUNT(ingredient_id) as total from recipe_ingredient ' 
             'INNER JOIN ingredient ON recipe_ingredient.ingredient_id = ingredient.id '
             'GROUP BY ingredient_id '

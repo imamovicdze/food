@@ -13,6 +13,7 @@ class Users(db.Model):
     location = db.Column(db.String(200))
     
     recipes = db.relationship("Recipes", backref='users', cascade="all, delete", passive_deletes=True)
+    ingredients = db.relationship("Ingredient", backref='users', cascade="all, delete", passive_deletes=True)
     recipe_rating = db.relationship("Recipe_rating", backref='users', cascade="all, delete", passive_deletes=True)
     
     def __init__(self, first_name, last_name, email, password):
@@ -53,11 +54,13 @@ class Ingredient(db.Model):
     __tablename__ = 'ingredient'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     
     recipe_ingredient = db.relationship("Recipe_ingredient", backref='ingredient', cascade="all, delete", passive_deletes=True)
     
-    def __init__(self, name):
+    def __init__(self, name, user_id):
         self.name = name
+        self.user_id = user_id
 
     __table_args__ = {'mysql_engine':'InnoDB'}
         
